@@ -126,6 +126,7 @@ class Program
             // Main event loop
             // Based on otelnet.c:1306-1364 (while loop)
             byte[] buffer = new byte[4096];
+            byte[] stdinBuffer = new byte[1024];
             StringBuilder consoleLineBuffer = new StringBuilder();
 
             while (running && !TerminalControl.ShouldExit)
@@ -137,10 +138,11 @@ class Program
                     telnet.UpdateWindowSize(newWidth, newHeight);
                 }
 
-                // Process stdin (keyboard input)
-                if (System.Console.KeyAvailable)
+                // Process stdin (keyboard input) - read directly in raw mode
+                int stdinBytesRead = terminal.ReadStdin(stdinBuffer, stdinBuffer.Length);
+                if (stdinBytesRead > 0)
                 {
-                    ProcessStdin(consoleLineBuffer);
+                    ProcessStdin(stdinBuffer, stdinBytesRead, consoleLineBuffer);
                 }
 
                 // Process telnet data (network input)
@@ -215,121 +217,124 @@ class Program
     /// Process stdin input (keyboard)
     /// Based on otelnet.c:1026-1080 (otelnet_process_stdin)
     /// </summary>
-    static void ProcessStdin(StringBuilder consoleLineBuffer)
+    static void ProcessStdin(byte[] stdinBuffer, int bytesRead, StringBuilder consoleLineBuffer)
     {
-        ConsoleKeyInfo keyInfo = System.Console.ReadKey(true);
-        char c = keyInfo.KeyChar;
-        byte b = (byte)c;
-
-        if (consoleMode.CurrentMode == OperationMode.Client)
+        // Process each byte received from stdin
+        for (int i = 0; i < bytesRead; i++)
         {
-            // Client mode - check for console trigger (Ctrl+])
-            // Based on otelnet.c:1053-1060
-            if (b == ConsoleMode.ConsoleTriggerKey)
+            byte b = stdinBuffer[i];
+            char c = (char)b;
+
+            if (consoleMode.CurrentMode == OperationMode.Client)
             {
-                // Enter console mode
-                consoleMode.Enter();
-                return;
-            }
+                // Client mode - check for console trigger (Ctrl+])
+                // Based on otelnet.c:1053-1060
+                if (b == ConsoleMode.ConsoleTriggerKey)
+                {
+                    // Enter console mode
+                    consoleMode.Enter();
+                    continue;
+                }
 
-            // Local echo if server doesn't echo
-            // Based on otelnet.c:1474-1517
-            bool needLocalEcho = !telnet.EchoRemote;
+                // Local echo if server doesn't echo
+                // Based on otelnet.c:1474-1517
+                bool needLocalEcho = !telnet.EchoRemote;
 
-            // DEBUG: Log echo state on first character
-            // if (!echoStateLogged)
-            // {
-            //     System.Console.Error.WriteLine($"[DEBUG] EchoRemote={telnet.EchoRemote}, needLocalEcho={needLocalEcho}");
-            //     echoStateLogged = true;
-            // }
+                // DEBUG: Log echo state on first character
+                // if (!echoStateLogged)
+                // {
+                //     System.Console.Error.WriteLine($"[DEBUG] EchoRemote={telnet.EchoRemote}, needLocalEcho={needLocalEcho}");
+                //     echoStateLogged = true;
+                // }
 
-            if (needLocalEcho)
-            {
-                // Echo input locally - support multibyte characters
+                if (needLocalEcho)
+                {
+                    // Echo input locally - support multibyte characters
+                    if (c == '\r')
+                    {
+                        // CR - echo as CR+LF
+                        System.Console.Write("\r\n");
+                    }
+                    else if (c == '\b' || b == 0x7F)
+                    {
+                        // Backspace/Delete - echo backspace sequence
+                        System.Console.Write("\b \b");
+                    }
+                    else if (b >= 0x20)
+                    {
+                        // Printable ASCII character or multibyte sequence byte (0x80-0xFF)
+                        System.Console.Write(c);
+                    }
+                    // Control characters (< 0x20) are not echoed
+                }
+
+                // Send to telnet server
+                // Convert CR to CR+LF for telnet protocol (RFC 854)
+                // Based on otelnet.c:1719-1736
+                byte[] data;
                 if (c == '\r')
                 {
-                    // CR - echo as CR+LF
-                    System.Console.Write("\r\n");
+                    // CR -> CR+LF
+                    data = new byte[] { 0x0D, 0x0A };
                 }
-                else if (c == '\b' || b == 0x7F)
+                else
                 {
-                    // Backspace/Delete - echo backspace sequence
-                    System.Console.Write("\b \b");
+                    data = new byte[] { b };
                 }
-                else if (b >= 0x20)
-                {
-                    // Printable ASCII character or multibyte sequence byte (0x80-0xFF)
-                    System.Console.Write(c);
-                }
-                // Control characters (< 0x20) are not echoed
-            }
 
-            // Send to telnet server
-            // Convert CR to CR+LF for telnet protocol (RFC 854)
-            // Based on otelnet.c:1719-1736
-            byte[] data;
-            if (c == '\r')
-            {
-                // CR -> CR+LF
-                data = new byte[] { 0x0D, 0x0A };
+                // Prepare output (IAC escaping)
+                byte[] preparedData = telnet.PrepareOutput(data);
+                telnet.Send(preparedData);
+
+                // Log sent data
+                if (logger.IsEnabled)
+                {
+                    logger.LogSent(preparedData);
+                }
             }
             else
             {
-                data = new byte[] { b };
-            }
+                // Console mode - process console command
+                // Based on otelnet.c:1082-1155
 
-            // Prepare output (IAC escaping)
-            byte[] preparedData = telnet.PrepareOutput(data);
-            telnet.Send(preparedData);
-
-            // Log sent data
-            if (logger.IsEnabled)
-            {
-                logger.LogSent(preparedData);
-            }
-        }
-        else
-        {
-            // Console mode - process console command
-            // Based on otelnet.c:1082-1155
-
-            if (c == '\r' || c == '\n')
-            {
-                // Process command
-                System.Console.Write("\r\n");  // Echo newline
-                string command = consoleLineBuffer.ToString();
-                consoleLineBuffer.Clear();
-
-                commandProcessor.ProcessCommand(command);
-
-                // Show prompt if still in console mode
-                if (consoleMode.CurrentMode == OperationMode.Console)
+                if (c == '\r' || c == '\n')
                 {
-                    commandProcessor.ShowPrompt();
+                    // Process command
+                    System.Console.Write("\r\n");  // Echo newline
+                    string command = consoleLineBuffer.ToString();
+                    consoleLineBuffer.Clear();
+
+                    commandProcessor.ProcessCommand(command);
+
+                    // Show prompt if still in console mode
+                    if (consoleMode.CurrentMode == OperationMode.Console)
+                    {
+                        commandProcessor.ShowPrompt();
+                    }
                 }
-            }
-            else if (c == '\b' || c == 0x7F)  // Backspace or DEL
-            {
-                if (consoleLineBuffer.Length > 0)
+                else if (c == '\b' || c == 0x7F)  // Backspace or DEL
                 {
-                    consoleLineBuffer.Length--;
-                    // Echo backspace
-                    System.Console.Write("\b \b");
+                    if (consoleLineBuffer.Length > 0)
+                    {
+                        consoleLineBuffer.Length--;
+                        // Echo backspace
+                        System.Console.Write("\b \b");
+                    }
                 }
+                else if (b == 0x04)  // Ctrl+D - quit (otelnet.c:1564-1567)
+                {
+                    System.Console.Write("\r\n[Ctrl+D detected, exiting...]\r\n");
+                    running = false;
+                    return;
+                }
+                else if (c >= 32 && c < 127)  // Printable character
+                {
+                    consoleLineBuffer.Append(c);
+                    // Echo character
+                    System.Console.Write(c);
+                }
+                // Ignore other control characters
             }
-            else if (b == 0x04)  // Ctrl+D - quit (otelnet.c:1564-1567)
-            {
-                System.Console.Write("\r\n[Ctrl+D detected, exiting...]\r\n");
-                running = false;
-                return;
-            }
-            else if (c >= 32 && c < 127)  // Printable character
-            {
-                consoleLineBuffer.Append(c);
-                // Echo character
-                System.Console.Write(c);
-            }
-            // Ignore other control characters
         }
     }
 

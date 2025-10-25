@@ -478,6 +478,46 @@ public sealed class TerminalControl : IDisposable
 
     [DllImport("libc", SetLastError = true)]
     private static extern int tcdrain(int fd);
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern int read(int fd, byte[] buf, int count);
+
+    // ====================================================================
+    // Stdin Reading
+    // ====================================================================
+
+    /// <summary>
+    /// Read bytes from stdin (non-blocking)
+    /// Returns number of bytes read, 0 if no data available, -1 on error
+    /// </summary>
+    public int ReadStdin(byte[] buffer, int maxBytes)
+    {
+        if (buffer == null || maxBytes <= 0 || maxBytes > buffer.Length)
+        {
+            return -1;
+        }
+
+        try
+        {
+            int bytesRead = read(0, buffer, maxBytes);
+            return bytesRead;
+        }
+        catch
+        {
+            return -1;
+        }
+    }
+
+    /// <summary>
+    /// Check if stdin has data available (non-blocking check)
+    /// </summary>
+    public bool IsStdinAvailable()
+    {
+        // In non-blocking mode, we can try to read with a 1-byte peek
+        // But simpler approach: just try to read in the main loop
+        // Since we're in non-blocking mode, read() will return immediately
+        return true;  // Always return true, let read() handle it
+    }
 }
 
 /// <summary>
