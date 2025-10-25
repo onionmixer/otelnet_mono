@@ -14,7 +14,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
+    <OutputPath>.</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -23,7 +23,7 @@
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
+    <OutputPath>.</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
@@ -43,8 +43,8 @@
     <Compile Include="src\Terminal\TerminalControl.cs" />
     <Compile Include="src\Logging\HexDumper.cs" />
     <Compile Include="src\Logging\SessionLogger.cs" />
-    <Compile Include="src\Console\ConsoleMode.cs" />
-    <Compile Include="src\Console\CommandProcessor.cs" />
+    <Compile Include="src\Interactive\ConsoleMode.cs" />
+    <Compile Include="src\Interactive\CommandProcessor.cs" />
   </ItemGroup>
 
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

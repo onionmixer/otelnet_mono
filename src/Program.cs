@@ -82,6 +82,16 @@ namespace OtelnetMono
             consoleMode = new ConsoleMode();
             commandProcessor = new CommandProcessor(telnet, consoleMode);
 
+            // Register terminal restoration on process exit
+            // This ensures terminal is restored even if Mono tries to override it
+            AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+            {
+                if (terminal != null)
+                {
+                    terminal.DisableRawMode();
+                }
+            };
+
             try
             {
                 // Install signal handlers (SIGINT, SIGTERM, SIGWINCH)
@@ -164,20 +174,27 @@ namespace OtelnetMono
                     System.Console.Write("\r\n[Exiting due to signal]\r\n");
                 }
 
-                // Display statistics
-                telnet.PrintStatistics();
-
-                // Restore terminal
+                // Restore terminal BEFORE printing statistics (otelnet.c:1936-1937)
                 terminal.DisableRawMode();
+
+                // Display statistics (after terminal restoration)
+                telnet.PrintStatistics();
             }
             catch (Exception ex)
             {
-                System.Console.Write($"\r\nError: {ex.Message}\r\n");
-                // Make sure terminal is restored on error
+                // Make sure terminal is restored on error first
                 terminal.DisableRawMode();
+                // Then print error message (after terminal restoration)
+                System.Console.WriteLine($"\nError: {ex.Message}");
             }
             finally
             {
+                // Ensure terminal is always restored
+                if (terminal != null)
+                {
+                    terminal.DisableRawMode();
+                }
+
                 // Cleanup resources
                 if (telnet != null)
                 {

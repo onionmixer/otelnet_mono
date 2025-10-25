@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 using Mono.Unix;
 using Mono.Unix.Native;
 
@@ -83,7 +84,14 @@ namespace OtelnetMono.Terminal
                 }
 
                 // Create raw mode settings based on original
-                Termios raw = originalTermios;
+                // IMPORTANT: Deep copy to avoid modifying originalTermios.c_cc array
+                Termios raw = new Termios(true);
+                raw.c_iflag = originalTermios.c_iflag;
+                raw.c_oflag = originalTermios.c_oflag;
+                raw.c_cflag = originalTermios.c_cflag;
+                raw.c_lflag = originalTermios.c_lflag;
+                raw.c_line = originalTermios.c_line;
+                Array.Copy(originalTermios.c_cc, raw.c_cc, NCCS);
 
                 // Input modes: no break, no CR to NL, no parity check, no strip char,
                 // no start/stop output control
@@ -138,15 +146,34 @@ namespace OtelnetMono.Terminal
         /// </summary>
         public void DisableRawMode()
         {
-            if (!isRawMode || !termiosSaved)
+            if (!termiosSaved)
             {
                 return;
             }
 
             try
             {
-                // Restore original terminal settings
-                tcsetattr(0, TCSAFLUSH, ref originalTermios);
+                // Flush all output before restoring terminal
+                Console.Out.Flush();
+                Console.Error.Flush();
+
+                // Drain output for all fds
+                tcdrain(0);
+                tcdrain(1);
+                tcdrain(2);
+
+                // Restore original terminal settings for stdin (fd 0)
+                // Use TCSADRAIN to wait for output to be transmitted
+                tcsetattr(0, TCSADRAIN, ref originalTermios);
+
+                // Also restore for stdout (fd 1) and stderr (fd 2)
+                // In case they are separate ttys
+                tcsetattr(1, TCSADRAIN, ref originalTermios);
+                tcsetattr(2, TCSADRAIN, ref originalTermios);
+
+                // Force flush again after tcsetattr
+                Console.Out.Flush();
+                Console.Error.Flush();
 
                 // Restore blocking mode
                 if (flagsSaved && originalFlags >= 0)
@@ -155,11 +182,69 @@ namespace OtelnetMono.Terminal
                 }
 
                 isRawMode = false;
-                // [DEBUG] Terminal restored
+
+                // As a last resort on Linux/Unix/macOS, run 'stty sane' to ensure terminal is restored
+                // This works around Mono runtime overriding our terminal settings on exit
+                if (IsUnixPlatform())
+                {
+                    try
+                    {
+                        RunSttyCommand("sane");
+                    }
+                    catch
+                    {
+                        // Ignore errors - this is best-effort
+                    }
+                }
             }
-            catch (Exception ex)
+            catch
             {
-                Console.Error.WriteLine($"[ERROR] Failed to restore terminal: {ex.Message}");
+                // Ignore errors during cleanup
+            }
+        }
+
+        /// <summary>
+        /// Check if running on Unix/Linux/macOS platform
+        /// </summary>
+        private static bool IsUnixPlatform()
+        {
+            int p = (int)Environment.OSVersion.Platform;
+            // PlatformID.Unix = 4, PlatformID.MacOSX = 6
+            return (p == 4) || (p == 6) || (p == 128);
+        }
+
+        /// <summary>
+        /// Run stty command with given arguments
+        /// Cross-platform safe - uses Process instead of P/Invoke
+        /// IMPORTANT: Does NOT redirect stdin/stdout/stderr so stty can access the real terminal
+        /// </summary>
+        private static void RunSttyCommand(string args)
+        {
+            try
+            {
+                // Run stty in background with a delay to ensure it runs AFTER Mono fully exits
+                // This works around Mono runtime resetting terminal settings during shutdown
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "/bin/sh",
+                    Arguments = $"-c \"(sleep 0.1; stty {args} < /dev/tty 2>/dev/null) &\"",
+                    // DO NOT redirect - stty needs access to the actual terminal
+                    RedirectStandardOutput = false,
+                    RedirectStandardError = false,
+                    RedirectStandardInput = false,
+                    UseShellExecute = false,
+                    CreateNoWindow = false
+                };
+
+                using (var process = Process.Start(psi))
+                {
+                    // Don't wait - let it run in background
+                    process.WaitForExit(100); // Just wait for shell to spawn background job
+                }
+            }
+            catch
+            {
+                // Ignore errors - this is best-effort
             }
         }
 
@@ -299,16 +384,17 @@ namespace OtelnetMono.Terminal
 
         private const int NCCS = 32;
 
-        [StructLayout(LayoutKind.Sequential)]
+        // Pack=1 to match C struct layout exactly (no padding)
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct Termios
         {
-            public uint c_iflag;    // Input modes
-            public uint c_oflag;    // Output modes
-            public uint c_cflag;    // Control modes
-            public uint c_lflag;    // Local modes
-            public byte c_line;     // Line discipline
+            public uint c_iflag;    // Input modes (offset 0)
+            public uint c_oflag;    // Output modes (offset 4)
+            public uint c_cflag;    // Control modes (offset 8)
+            public uint c_lflag;    // Local modes (offset 12)
+            public byte c_line;     // Line discipline (offset 16)
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = NCCS)]
-            public byte[] c_cc;     // Control characters
+            public byte[] c_cc;     // Control characters (offset 17)
 
             public Termios(bool init)
             {
@@ -354,7 +440,9 @@ namespace OtelnetMono.Terminal
         private const int VTIME = 5;
 
         // tcsetattr actions
-        private const int TCSAFLUSH = 2;
+        private const int TCSANOW = 0;      // Change immediately
+        private const int TCSADRAIN = 1;    // Change after output is drained
+        private const int TCSAFLUSH = 2;    // Change after flushing I/O
 
         // fcntl commands
         private const int F_GETFL = 3;
@@ -377,6 +465,21 @@ namespace OtelnetMono.Terminal
 
         [DllImport("libc", SetLastError = true)]
         private static extern int ioctl(int fd, uint request, ref Winsize ws);
+
+        [DllImport("libc", SetLastError = true)]
+        private static extern int tcdrain(int fd);
+
+        // Get errno
+        [DllImport("libc", SetLastError = true, EntryPoint = "__errno_location")]
+        private static extern IntPtr __errno_location();
+
+        private static int GetErrno()
+        {
+            return Marshal.ReadInt32(__errno_location());
+        }
+
+        [DllImport("libc", SetLastError = true)]
+        private static extern IntPtr strerror(int errnum);
     }
 
     /// <summary>

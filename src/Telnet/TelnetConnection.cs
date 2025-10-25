@@ -614,17 +614,20 @@ namespace OtelnetMono.Telnet
         /// </summary>
         public void PrintStatistics()
         {
-            Console.Write("\r\n=== Connection Statistics ===\r\n");
-            Console.Write($"Bytes sent:     {BytesSent}\r\n");
-            Console.Write($"Bytes received: {BytesReceived}\r\n");
+            // Use explicit \n because terminal might not be fully restored yet
+            Console.Write("\n");
+            Console.Write("=== Connection Statistics ===\n");
+            Console.Write($"Bytes sent:     {BytesSent}\n");
+            Console.Write($"Bytes received: {BytesReceived}\n");
 
             if (ConnectionStartTime != DateTime.MinValue)
             {
                 TimeSpan duration = ConnectionDuration;
-                Console.Write($"Duration:       {(int)duration.TotalSeconds} seconds\r\n");
+                Console.Write($"Duration:       {(int)duration.TotalSeconds} seconds\n");
             }
 
-            Console.Write("============================\r\n");
+            Console.Write("============================\n");
+            Console.Out.Flush();
         }
 
         /// <summary>
