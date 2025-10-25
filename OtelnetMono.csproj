@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{12345678-1234-1234-1234-123456789ABC}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>OtelnetMono</RootNamespace>
+    <AssemblyName>otelnet</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="Mono.Posix" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="src\Program.cs" />
+    <Compile Include="src\Telnet\TelnetProtocol.cs" />
+    <Compile Include="src\Telnet\TelnetState.cs" />
+    <Compile Include="src\Telnet\TelnetConnection.cs" />
+    <Compile Include="src\Terminal\TerminalControl.cs" />
+    <Compile Include="src\Logging\HexDumper.cs" />
+    <Compile Include="src\Logging\SessionLogger.cs" />
+    <Compile Include="src\Console\ConsoleMode.cs" />
+    <Compile Include="src\Console\CommandProcessor.cs" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>

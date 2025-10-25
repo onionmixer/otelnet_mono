@@ -1,0 +1,54 @@
+# Otelnet Mono - Git Ignore File
+
+# Build outputs
+bin/
+obj/
+build/
+dist/
+
+# Mono/C# specific
+*.exe
+*.dll
+*.mdb
+*.pdb
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.sln.cache
+
+# Exceptions - keep our main executable in source control for documentation
+!bin/.gitkeep
+
+# IDE files
+.vs/
+.vscode/
+*.swp
+*.swo
+*~
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.log
+
+# Test server logs
+/tmp/
+*.log
+
+# Package build artifacts
+*.tar.gz
+*.zip
+SHA256SUMS
+MD5SUMS
+MANIFEST.txt
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Temporary files
+*.tmp
+.*.tmp
