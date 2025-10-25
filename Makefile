@@ -4,7 +4,7 @@
 MCS = mcs
 
 # Output
-OUTPUT = bin/otelnet.exe
+OUTPUT = otelnet.exe
 
 # Source files
 SOURCES = src/Program.cs \
@@ -14,8 +14,8 @@ SOURCES = src/Program.cs \
           src/Terminal/TerminalControl.cs \
           src/Logging/HexDumper.cs \
           src/Logging/SessionLogger.cs \
-          src/Console/ConsoleMode.cs \
-          src/Console/CommandProcessor.cs
+          src/Interactive/ConsoleMode.cs \
+          src/Interactive/CommandProcessor.cs
 
 # References
 REFERENCES = -r:System.dll -r:Mono.Posix.dll
@@ -29,13 +29,12 @@ FLAGS = -debug
 all: build
 
 build:
-	@mkdir -p bin
 	$(MCS) $(FLAGS) $(REFERENCES) -out:$(OUTPUT) $(SOURCES)
 	@echo "Build complete: $(OUTPUT)"
 
 clean:
 	rm -f $(OUTPUT) $(OUTPUT).mdb
-	rm -rf bin obj
+	rm -rf obj
 
 run: build
 	mono $(OUTPUT)

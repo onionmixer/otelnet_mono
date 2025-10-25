@@ -76,7 +76,7 @@ namespace OtelnetMono.Terminal
                 {
                     if (tcgetattr(0, ref originalTermios) != 0)
                     {
-                        Console.WriteLine("[ERROR] Failed to get terminal attributes");
+                        Console.Error.WriteLine("[ERROR] Failed to get terminal attributes");
                         return false;
                     }
                     termiosSaved = true;
@@ -106,7 +106,7 @@ namespace OtelnetMono.Terminal
                 // Apply terminal settings
                 if (tcsetattr(0, TCSAFLUSH, ref raw) != 0)
                 {
-                    Console.WriteLine("[ERROR] Failed to set terminal attributes");
+                    Console.Error.WriteLine("[ERROR] Failed to set terminal attributes");
                     return false;
                 }
 
@@ -123,12 +123,12 @@ namespace OtelnetMono.Terminal
                 }
 
                 isRawMode = true;
-                Console.WriteLine("[DEBUG] Terminal setup complete (raw mode)");
+                // [DEBUG] Terminal setup complete (raw mode)
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ERROR] Failed to enable raw mode: {ex.Message}");
+                Console.Error.WriteLine($"[ERROR] Failed to enable raw mode: {ex.Message}");
                 return false;
             }
         }
@@ -155,11 +155,11 @@ namespace OtelnetMono.Terminal
                 }
 
                 isRawMode = false;
-                Console.WriteLine("[DEBUG] Terminal restored");
+                // [DEBUG] Terminal restored
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ERROR] Failed to restore terminal: {ex.Message}");
+                Console.Error.WriteLine($"[ERROR] Failed to restore terminal: {ex.Message}");
             }
         }
 
@@ -193,12 +193,12 @@ namespace OtelnetMono.Terminal
                         {
                             if (index == 0 || index == 1)  // SIGINT or SIGTERM
                             {
-                                Console.WriteLine($"\n[INFO] Received signal {signals[index].Signum}, exiting...");
+                                System.Console.Error.WriteLine($"\r\n[INFO] Received signal {signals[index].Signum}, exiting...");
                                 shouldExit = true;
                             }
                             else if (index == 2)  // SIGWINCH
                             {
-                                Console.WriteLine("[DEBUG] Window size changed (SIGWINCH)");
+                                // [DEBUG] Window size changed (SIGWINCH)
                                 windowSizeChanged = true;
                             }
                         }
@@ -208,11 +208,11 @@ namespace OtelnetMono.Terminal
                 signalThread.IsBackground = true;
                 signalThread.Start();
 
-                Console.WriteLine("[DEBUG] Signal handlers installed");
+                Console.Error.WriteLine("[DEBUG] Signal handlers installed");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ERROR] Failed to install signal handlers: {ex.Message}");
+                Console.Error.WriteLine($"[ERROR] Failed to install signal handlers: {ex.Message}");
             }
         }
 
@@ -238,13 +238,13 @@ namespace OtelnetMono.Terminal
                 }
                 else
                 {
-                    Console.WriteLine("[WARNING] Failed to get window size");
+                    Console.Error.WriteLine("[WARNING] Failed to get window size");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[WARNING] Exception getting window size: {ex.Message}");
+                Console.Error.WriteLine($"[WARNING] Exception getting window size: {ex.Message}");
                 return false;
             }
         }

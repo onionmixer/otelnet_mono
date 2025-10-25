@@ -209,7 +209,7 @@ namespace OtelnetMono.Telnet
                 // Set connection start time for statistics
                 ConnectionStartTime = DateTime.UtcNow;
 
-                Console.WriteLine($"Connected to {host}:{port}");
+                System.Console.Error.WriteLine($"Connected to {host}:{port}");
 
                 // Send initial option negotiations
                 SendInitialNegotiations();
@@ -245,7 +245,7 @@ namespace OtelnetMono.Telnet
             IsConnected = false;
             state = TelnetState.Data;
 
-            Console.WriteLine("Disconnected");
+            // Disconnected
         }
 
         /// <summary>
@@ -261,6 +261,7 @@ namespace OtelnetMono.Telnet
             SendNegotiate(TelnetProtocol.DO, TelnetProtocol.TELOPT_SGA);
 
             // Request ECHO
+            Console.Error.WriteLine("[DEBUG] Sending: DO ECHO");
             SendNegotiate(TelnetProtocol.DO, TelnetProtocol.TELOPT_ECHO);
 
             // Offer TERMINAL-TYPE
@@ -338,7 +339,7 @@ namespace OtelnetMono.Telnet
         {
             byte[] data = new byte[] { TelnetProtocol.IAC, command };
             Send(data);
-            Console.WriteLine($"[DEBUG] Sent: IAC {TelnetProtocol.GetCommandName(command)}");
+            // [DEBUG] Sent: IAC command
         }
 
         /// <summary>
@@ -348,7 +349,7 @@ namespace OtelnetMono.Telnet
         {
             byte[] data = new byte[] { TelnetProtocol.IAC, cmd, option };
             Send(data);
-            Console.WriteLine($"[DEBUG] Sent: IAC {TelnetProtocol.GetCommandName(cmd)} {TelnetProtocol.GetOptionName(option)}");
+            // [DEBUG] Sent: IAC negotiate
         }
 
         /// <summary>
@@ -356,7 +357,7 @@ namespace OtelnetMono.Telnet
         /// </summary>
         private void HandleNegotiate(byte cmd, byte option)
         {
-            Console.WriteLine($"[DEBUG] Received: IAC {TelnetProtocol.GetCommandName(cmd)} {TelnetProtocol.GetOptionName(option)}");
+            // [DEBUG] Received: IAC negotiation
 
             switch (cmd)
             {
@@ -374,24 +375,24 @@ namespace OtelnetMono.Telnet
                             if (option == TelnetProtocol.TELOPT_BINARY)
                             {
                                 BinaryRemote = true;
-                                Console.WriteLine("[INFO] Remote BINARY mode enabled");
+                                // [INFO] Remote BINARY mode enabled
                             }
                             else if (option == TelnetProtocol.TELOPT_SGA)
                             {
                                 SgaRemote = true;
-                                Console.WriteLine("[INFO] Remote SGA enabled");
+                                // [INFO] Remote SGA enabled
                             }
                             else if (option == TelnetProtocol.TELOPT_ECHO)
                             {
                                 EchoRemote = true;
-                                Console.WriteLine("[INFO] Remote ECHO enabled");
+                                Console.Error.WriteLine("[INFO] Remote ECHO enabled (server will echo)");
                             }
                         }
                     }
                     else
                     {
                         // Reject unsupported options - send DONT (RFC 855)
-                        Console.WriteLine($"[DEBUG] Rejecting unsupported option WILL {option}");
+                        // [DEBUG] Rejecting unsupported option
                         SendNegotiate(TelnetProtocol.DONT, option);
                         // Note: remoteOptions[option] remains false (not supported)
                     }
@@ -408,7 +409,7 @@ namespace OtelnetMono.Telnet
                         if (option == TelnetProtocol.TELOPT_BINARY)
                         {
                             BinaryRemote = false;
-                            Console.WriteLine("[WARNING] Server rejected BINARY mode - multibyte characters (UTF-8, EUC-KR) may be corrupted!");
+                            Console.Error.WriteLine("[WARNING] Server rejected BINARY mode - multibyte characters (UTF-8, EUC-KR) may be corrupted!");
                         }
                         else if (option == TelnetProtocol.TELOPT_SGA)
                         {
@@ -417,6 +418,7 @@ namespace OtelnetMono.Telnet
                         else if (option == TelnetProtocol.TELOPT_ECHO)
                         {
                             EchoRemote = false;
+                            Console.Error.WriteLine("[INFO] Remote ECHO disabled (client will echo locally)");
                         }
                         else if (option == TelnetProtocol.TELOPT_LINEMODE)
                         {
@@ -444,38 +446,38 @@ namespace OtelnetMono.Telnet
                             if (option == TelnetProtocol.TELOPT_BINARY)
                             {
                                 BinaryLocal = true;
-                                Console.WriteLine("[INFO] Local BINARY mode enabled");
+                                // [INFO] Local BINARY mode enabled
                             }
                             else if (option == TelnetProtocol.TELOPT_SGA)
                             {
                                 SgaLocal = true;
-                                Console.WriteLine("[INFO] Local SGA enabled");
+                                // [INFO] Local SGA enabled
                             }
                             else if (option == TelnetProtocol.TELOPT_TTYPE)
                             {
-                                Console.WriteLine("[INFO] TERMINAL-TYPE negotiation accepted");
+                                // [INFO] TERMINAL-TYPE negotiation accepted
                                 // Server will send SB TTYPE SEND to request type
                             }
                             else if (option == TelnetProtocol.TELOPT_NAWS)
                             {
-                                Console.WriteLine("[INFO] NAWS negotiation accepted");
+                                // [INFO] NAWS negotiation accepted
                                 // Send initial window size
                                 SendNAWS(TerminalWidth, TerminalHeight);
                             }
                             else if (option == TelnetProtocol.TELOPT_TSPEED)
                             {
-                                Console.WriteLine("[INFO] TSPEED negotiation accepted");
+                                // [INFO] TSPEED negotiation accepted
                                 // Server will send SB TSPEED SEND to request speed
                             }
                             else if (option == TelnetProtocol.TELOPT_ENVIRON)
                             {
-                                Console.WriteLine("[INFO] ENVIRON negotiation accepted");
+                                // [INFO] ENVIRON negotiation accepted
                                 // Server will send SB ENVIRON SEND to request variables
                             }
                             else if (option == TelnetProtocol.TELOPT_LINEMODE)
                             {
                                 LinemodeActive = true;
-                                Console.WriteLine("[INFO] LINEMODE negotiation accepted");
+                                // [INFO] LINEMODE negotiation accepted
                                 // Server may send MODE subnegotiation
                             }
                         }
@@ -483,7 +485,7 @@ namespace OtelnetMono.Telnet
                     else
                     {
                         // Reject unsupported options - send WONT (RFC 855)
-                        Console.WriteLine($"[DEBUG] Rejecting unsupported option DO {option}");
+                        // [DEBUG] Rejecting unsupported option
                         SendNegotiate(TelnetProtocol.WONT, option);
                         // Note: localOptions[option] remains false (not supported)
                     }
@@ -500,7 +502,7 @@ namespace OtelnetMono.Telnet
                         if (option == TelnetProtocol.TELOPT_BINARY)
                         {
                             BinaryLocal = false;
-                            Console.WriteLine("[WARNING] Server rejected local BINARY mode - multibyte characters may be corrupted on send!");
+                            Console.Error.WriteLine("[WARNING] Server rejected local BINARY mode - multibyte characters may be corrupted on send!");
                         }
                         else if (option == TelnetProtocol.TELOPT_SGA)
                         {
@@ -515,7 +517,7 @@ namespace OtelnetMono.Telnet
                     break;
 
                 default:
-                    Console.WriteLine($"[WARNING] Unknown negotiation command: {cmd}");
+                    // [WARNING] Unknown negotiation command
                     break;
             }
         }
@@ -543,19 +545,13 @@ namespace OtelnetMono.Telnet
             {
                 // Character mode - server handles echo
                 IsLineMode = false;
-                if (oldLineMode != IsLineMode)
-                {
-                    Console.WriteLine("[INFO] Telnet mode: CHARACTER MODE (server echo, SGA enabled)");
-                }
+                // [INFO] Telnet mode: CHARACTER MODE
             }
             else
             {
                 // Line mode - client handles echo
                 IsLineMode = true;
-                if (oldLineMode != IsLineMode)
-                {
-                    Console.WriteLine("[INFO] Telnet mode: LINE MODE (client echo)");
-                }
+                // [INFO] Telnet mode: LINE MODE
             }
         }
 
@@ -567,7 +563,7 @@ namespace OtelnetMono.Telnet
         {
             if (width < 0 || height < 0 || width > 65535 || height > 65535)
             {
-                Console.WriteLine($"[ERROR] Invalid window size: {width}x{height}");
+                // [ERROR] Invalid window size
                 return;
             }
 
@@ -580,7 +576,7 @@ namespace OtelnetMono.Telnet
             data.Add((byte)((height >> 8) & 0xFF));  // Height high byte
             data.Add((byte)(height & 0xFF));          // Height low byte
 
-            Console.WriteLine($"[INFO] Sending NAWS: {width}x{height}");
+            // [INFO] Sending NAWS
 
             SendSubnegotiation(data.ToArray());
         }
@@ -594,7 +590,7 @@ namespace OtelnetMono.Telnet
             // Check if size actually changed
             if (newWidth != TerminalWidth || newHeight != TerminalHeight)
             {
-                Console.WriteLine($"[INFO] Window size changed: {TerminalWidth}x{TerminalHeight} -> {newWidth}x{newHeight}");
+                // [INFO] Window size changed
 
                 // Update stored size
                 TerminalWidth = newWidth;
@@ -618,18 +614,17 @@ namespace OtelnetMono.Telnet
         /// </summary>
         public void PrintStatistics()
         {
-            Console.WriteLine();
-            Console.WriteLine("=== Connection Statistics ===");
-            Console.WriteLine($"Bytes sent:     {BytesSent}");
-            Console.WriteLine($"Bytes received: {BytesReceived}");
+            Console.Write("\r\n=== Connection Statistics ===\r\n");
+            Console.Write($"Bytes sent:     {BytesSent}\r\n");
+            Console.Write($"Bytes received: {BytesReceived}\r\n");
 
             if (ConnectionStartTime != DateTime.MinValue)
             {
                 TimeSpan duration = ConnectionDuration;
-                Console.WriteLine($"Duration:       {(int)duration.TotalSeconds} seconds");
+                Console.Write($"Duration:       {(int)duration.TotalSeconds} seconds\r\n");
             }
 
-            Console.WriteLine();
+            Console.Write("============================\r\n");
         }
 
         /// <summary>
@@ -666,7 +661,7 @@ namespace OtelnetMono.Telnet
             output.Add(TelnetProtocol.IAC);
             output.Add(TelnetProtocol.SE);
 
-            Console.WriteLine($"[DEBUG] Sending subnegotiation: {output.Count} bytes");
+            // [DEBUG] Sending subnegotiation
 
             Send(output.ToArray());
         }
@@ -683,7 +678,7 @@ namespace OtelnetMono.Telnet
             }
 
             byte option = sbBuffer[0];
-            Console.WriteLine($"[DEBUG] Received subnegotiation for option {TelnetProtocol.GetOptionName(option)}, length {sbBuffer.Count}");
+            // [DEBUG] Received subnegotiation
 
             switch (option)
             {
@@ -700,7 +695,7 @@ namespace OtelnetMono.Telnet
                         response.Add(TelnetProtocol.TTYPE_IS);
                         response.AddRange(Encoding.ASCII.GetBytes(currentType));
 
-                        Console.WriteLine($"[INFO] Sending TERMINAL-TYPE IS {currentType} (cycle {TerminalTypeIndex})");
+                        // [INFO] Sending TERMINAL-TYPE
                         SendSubnegotiation(response.ToArray());
 
                         // Advance to next type for next request
@@ -721,7 +716,7 @@ namespace OtelnetMono.Telnet
                         response.Add(TelnetProtocol.TTYPE_IS);  // IS = 0
                         response.AddRange(Encoding.ASCII.GetBytes(TerminalSpeed));
 
-                        Console.WriteLine($"[INFO] Sending TSPEED IS {TerminalSpeed}");
+                        // [INFO] Sending TSPEED
                         SendSubnegotiation(response.ToArray());
                     }
                     break;
@@ -743,7 +738,7 @@ namespace OtelnetMono.Telnet
                             response.AddRange(Encoding.ASCII.GetBytes("USER"));
                             response.Add(TelnetProtocol.ENV_VALUE);
                             response.AddRange(Encoding.ASCII.GetBytes(user));
-                            Console.WriteLine($"[DEBUG] Sending ENVIRON: USER={user}");
+                            // [DEBUG] Sending ENVIRON: USER
                         }
 
                         // Send DISPLAY variable if available (for X11)
@@ -754,17 +749,17 @@ namespace OtelnetMono.Telnet
                             response.AddRange(Encoding.ASCII.GetBytes("DISPLAY"));
                             response.Add(TelnetProtocol.ENV_VALUE);
                             response.AddRange(Encoding.ASCII.GetBytes(display));
-                            Console.WriteLine($"[DEBUG] Sending ENVIRON: DISPLAY={display}");
+                            // [DEBUG] Sending ENVIRON: DISPLAY
                         }
 
                         if (response.Count > 2)  // If we added any variables
                         {
-                            Console.WriteLine($"[INFO] Sending ENVIRON IS with {response.Count} bytes");
+                            // [INFO] Sending ENVIRON
                             SendSubnegotiation(response.ToArray());
                         }
                         else
                         {
-                            Console.WriteLine("[INFO] No environment variables to send");
+                            // [INFO] No environment variables
                         }
                     }
                     break;
@@ -781,8 +776,7 @@ namespace OtelnetMono.Telnet
 
                             LinemodeEdit = (mode & TelnetProtocol.MODE_EDIT) != 0;
 
-                            Console.WriteLine($"[INFO] LINEMODE MODE: EDIT={((mode & TelnetProtocol.MODE_EDIT) != 0 ? "yes" : "no")} " +
-                                            $"TRAPSIG={((mode & TelnetProtocol.MODE_TRAPSIG) != 0 ? "yes" : "no")}");
+                            // [INFO] LINEMODE MODE
 
                             // Send ACK if MODE_ACK bit is set (RFC 1184 mode synchronization)
                             if ((mode & TelnetProtocol.MODE_ACK) != 0)
@@ -792,7 +786,7 @@ namespace OtelnetMono.Telnet
                                 response[1] = TelnetProtocol.LM_MODE;
                                 response[2] = mode;  // Echo back the same mode
 
-                                Console.WriteLine("[DEBUG] Sending LINEMODE MODE ACK");
+                                // [DEBUG] Sending LINEMODE MODE ACK
                                 SendSubnegotiation(response);
                             }
 
@@ -806,17 +800,17 @@ namespace OtelnetMono.Telnet
                     else if (sbBuffer.Count >= 2 && sbBuffer[1] == TelnetProtocol.LM_FORWARDMASK)
                     {
                         // FORWARDMASK - acknowledge but don't implement for now
-                        Console.WriteLine("[DEBUG] Received LINEMODE FORWARDMASK (not implemented)");
+                        // [DEBUG] Received LINEMODE FORWARDMASK
                     }
                     else if (sbBuffer.Count >= 2 && sbBuffer[1] == TelnetProtocol.LM_SLC)
                     {
                         // SLC (Set Local Characters) - acknowledge but don't implement for now
-                        Console.WriteLine("[DEBUG] Received LINEMODE SLC (not implemented)");
+                        // [DEBUG] Received LINEMODE SLC
                     }
                     break;
 
                 default:
-                    Console.WriteLine($"[DEBUG] Unhandled subnegotiation for option {option}");
+                    // [DEBUG] Unhandled subnegotiation
                     break;
             }
         }
@@ -888,19 +882,19 @@ namespace OtelnetMono.Telnet
                         else if (c == TelnetProtocol.GA)
                         {
                             // Go Ahead - silently ignore (RFC 858)
-                            Console.WriteLine("[DEBUG] Received IAC GA (ignored)");
+                            // [DEBUG] Received IAC GA
                             state = TelnetState.Data;
                         }
                         else if (c == TelnetProtocol.NOP)
                         {
                             // No Operation - silently ignore (RFC 854)
-                            Console.WriteLine("[DEBUG] Received IAC NOP");
+                            // [DEBUG] Received IAC NOP
                             state = TelnetState.Data;
                         }
                         else if (c == TelnetProtocol.AYT)
                         {
                             // Are You There - respond with confirmation (RFC 854)
-                            Console.WriteLine("[DEBUG] Received IAC AYT");
+                            // [DEBUG] Received IAC AYT
                             byte[] response = System.Text.Encoding.ASCII.GetBytes("\r\n[Otelnet: Yes, I'm here]\r\n");
                             Send(response);
                             state = TelnetState.Data;
@@ -908,49 +902,49 @@ namespace OtelnetMono.Telnet
                         else if (c == TelnetProtocol.IP)
                         {
                             // Interrupt Process - log but don't act (RFC 854)
-                            Console.WriteLine("[INFO] Received IAC IP (Interrupt Process)");
+                            // [INFO] Received IAC IP
                             state = TelnetState.Data;
                         }
                         else if (c == TelnetProtocol.AO)
                         {
                             // Abort Output - log but don't act (RFC 854)
-                            Console.WriteLine("[INFO] Received IAC AO (Abort Output)");
+                            // [INFO] Received IAC AO
                             state = TelnetState.Data;
                         }
                         else if (c == TelnetProtocol.BREAK)
                         {
                             // Break - log but don't act (RFC 854)
-                            Console.WriteLine("[INFO] Received IAC BREAK");
+                            // [INFO] Received IAC BREAK
                             state = TelnetState.Data;
                         }
                         else if (c == TelnetProtocol.EL)
                         {
                             // Erase Line - log but don't act (RFC 854)
-                            Console.WriteLine("[DEBUG] Received IAC EL (Erase Line)");
+                            // [DEBUG] Received IAC EL
                             state = TelnetState.Data;
                         }
                         else if (c == TelnetProtocol.EC)
                         {
                             // Erase Character - log but don't act (RFC 854)
-                            Console.WriteLine("[DEBUG] Received IAC EC (Erase Character)");
+                            // [DEBUG] Received IAC EC
                             state = TelnetState.Data;
                         }
                         else if (c == TelnetProtocol.DM)
                         {
                             // Data Mark - marks end of urgent data (RFC 854)
-                            Console.WriteLine("[DEBUG] Received IAC DM (Data Mark)");
+                            // [DEBUG] Received IAC DM
                             state = TelnetState.Data;
                         }
                         else if (c == TelnetProtocol.EOR)
                         {
                             // End of Record - log but don't act (RFC 885)
-                            Console.WriteLine("[DEBUG] Received IAC EOR (End of Record)");
+                            // [DEBUG] Received IAC EOR
                             state = TelnetState.Data;
                         }
                         else
                         {
                             // Unknown IAC command - log and ignore
-                            Console.WriteLine($"[WARNING] Received unknown IAC command: {c}");
+                            // [WARNING] Received unknown IAC command
                             state = TelnetState.Data;
                         }
                         break;
@@ -1022,14 +1016,14 @@ namespace OtelnetMono.Telnet
                         {
                             // CR NUL - output just CR
                             output.Add((byte)'\r');
-                            Console.WriteLine("[DEBUG] Received CR NUL (carriage return only)");
+                            // [DEBUG] Received CR NUL
                         }
                         else if (c == (byte)'\n')
                         {
                             // CR LF - output CR LF (newline)
                             output.Add((byte)'\r');
                             output.Add((byte)'\n');
-                            Console.WriteLine("[DEBUG] Received CR LF (newline)");
+                            // [DEBUG] Received CR LF
                         }
                         else if (c == TelnetProtocol.IAC)
                         {
@@ -1043,22 +1037,19 @@ namespace OtelnetMono.Telnet
                             // CR followed by other character - output CR and process character normally
                             output.Add((byte)'\r');
                             output.Add(c);
-                            Console.WriteLine($"[DEBUG] Received CR followed by 0x{c:X2} (non-standard)");
+                            // [DEBUG] Received CR followed by other
                         }
                         state = TelnetState.Data;
                         break;
 
                     default:
-                        Console.WriteLine($"[WARNING] Invalid telnet state: {state}");
+                        // [WARNING] Invalid telnet state
                         state = TelnetState.Data;
                         break;
                 }
             }
 
-            if (output.Count > 0)
-            {
-                Console.WriteLine($"[DEBUG] Telnet processed {input.Length} bytes -> {output.Count} bytes");
-            }
+            // [DEBUG] Telnet processed bytes
 
             return output.ToArray();
         }
@@ -1091,10 +1082,7 @@ namespace OtelnetMono.Telnet
                 }
             }
 
-            if (output.Count > input.Length)
-            {
-                Console.WriteLine($"[DEBUG] Telnet prepared {input.Length} bytes -> {output.Count} bytes (IAC escaped)");
-            }
+            // [DEBUG] Telnet prepared output (IAC escaped if needed)
 
             return output.ToArray();
         }

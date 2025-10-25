@@ -80,7 +80,7 @@ namespace OtelnetMono.Interactive
             consoleBufferPos = 0;
             Array.Clear(consoleBuffer, 0, consoleBuffer.Length);
 
-            System.Console.WriteLine("\r\n[Console Mode - Enter empty line to return, 'quit' to exit]");
+            System.Console.Write("\r\n[Console Mode - Enter empty line to return, 'quit' to exit]\r\n");
             System.Console.Write("otelnet> ");
             System.Console.Out.Flush();
 
@@ -102,7 +102,7 @@ namespace OtelnetMono.Interactive
             CurrentMode = OperationMode.Client;
             consoleBufferPos = 0;
 
-            System.Console.WriteLine("\r\n[Back to client mode]");
+            System.Console.Write("\r\n[Back to client mode]\r\n");
             System.Console.Out.Flush();
 
             // Raise mode changed event

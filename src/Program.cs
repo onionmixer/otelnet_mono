@@ -22,6 +22,7 @@ namespace OtelnetMono
         private static TerminalControl terminal;
         private static TelnetConnection telnet;
         private static SessionLogger logger;
+        private static bool echoStateLogged = false;
 
         static void Main(string[] args)
         {
@@ -92,7 +93,7 @@ namespace OtelnetMono
                 {
                     telnet.TerminalWidth = initialWidth;
                     telnet.TerminalHeight = initialHeight;
-                    System.Console.WriteLine($"[INFO] Terminal size: {initialWidth}x{initialHeight}");
+                    System.Console.Error.WriteLine($"[INFO] Terminal size: {initialWidth}x{initialHeight}");
                 }
 
                 // Enable session logging (optional - for testing)
@@ -143,7 +144,7 @@ namespace OtelnetMono
                         else if (bytesRead < 0)
                         {
                             // Connection closed or error
-                            System.Console.WriteLine("\r\n[Connection closed by remote host]");
+                            System.Console.Write("\r\n[Connection closed by remote host]\r\n");
                             break;
                         }
                     }
@@ -160,7 +161,7 @@ namespace OtelnetMono
                 // Show exit message
                 if (TerminalControl.ShouldExit)
                 {
-                    System.Console.WriteLine("\r\n[Exiting due to signal]");
+                    System.Console.Write("\r\n[Exiting due to signal]\r\n");
                 }
 
                 // Display statistics
@@ -171,7 +172,7 @@ namespace OtelnetMono
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine($"\r\nError: {ex.Message}");
+                System.Console.Write($"\r\nError: {ex.Message}\r\n");
                 // Make sure terminal is restored on error
                 terminal.DisableRawMode();
             }
@@ -214,6 +215,38 @@ namespace OtelnetMono
                     return;
                 }
 
+                // Local echo if server doesn't echo
+                // Based on otelnet.c:1474-1517
+                bool needLocalEcho = !telnet.EchoRemote;
+
+                // DEBUG: Log echo state on first character
+                // if (!echoStateLogged)
+                // {
+                //     System.Console.Error.WriteLine($"[DEBUG] EchoRemote={telnet.EchoRemote}, needLocalEcho={needLocalEcho}");
+                //     echoStateLogged = true;
+                // }
+
+                if (needLocalEcho)
+                {
+                    // Echo input locally - support multibyte characters
+                    if (c == '\r')
+                    {
+                        // CR - echo as CR+LF
+                        System.Console.Write("\r\n");
+                    }
+                    else if (c == '\b' || b == 0x7F)
+                    {
+                        // Backspace/Delete - echo backspace sequence
+                        System.Console.Write("\b \b");
+                    }
+                    else if (b >= 0x20)
+                    {
+                        // Printable ASCII character or multibyte sequence byte (0x80-0xFF)
+                        System.Console.Write(c);
+                    }
+                    // Control characters (< 0x20) are not echoed
+                }
+
                 // Send to telnet server
                 byte[] data = new byte[] { b };
 
@@ -235,7 +268,7 @@ namespace OtelnetMono
                 if (c == '\r' || c == '\n')
                 {
                     // Process command
-                    System.Console.WriteLine();  // Echo newline
+                    System.Console.Write("\r\n");  // Echo newline
                     string command = consoleLineBuffer.ToString();
                     consoleLineBuffer.Clear();
 
@@ -255,6 +288,12 @@ namespace OtelnetMono
                         // Echo backspace
                         System.Console.Write("\b \b");
                     }
+                }
+                else if (b == 0x04)  // Ctrl+D - quit (otelnet.c:1564-1567)
+                {
+                    System.Console.Write("\r\n[Ctrl+D detected, exiting...]\r\n");
+                    running = false;
+                    return;
                 }
                 else if (c >= 32 && c < 127)  // Printable character
                 {

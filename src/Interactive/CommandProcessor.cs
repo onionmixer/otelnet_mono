@@ -86,19 +86,8 @@ namespace OtelnetMono.Interactive
                 case "cd":
                     return HandleCd(args);
 
-                // File transfer commands (not yet implemented)
-                case "sz":
-                case "sy":
-                case "sx":
-                case "rz":
-                case "ry":
-                case "rx":
-                case "kermit":
-                    System.Console.WriteLine($"\r\n[File transfer command '{cmd}' not yet implemented]");
-                    return true;
-
                 default:
-                    System.Console.WriteLine($"\r\n[Unknown command: {cmd}. Type 'help' for available commands]");
+                    System.Console.Write($"\r\n[Unknown command: {cmd}. Type 'help' for available commands]\r\n");
                     return false;
             }
         }
@@ -148,7 +137,7 @@ namespace OtelnetMono.Interactive
         /// </summary>
         private bool HandleQuit()
         {
-            System.Console.WriteLine("\r\n[Exiting...]");
+            System.Console.Write("\r\n[Exiting...]\r\n");
             QuitRequested?.Invoke(this, EventArgs.Empty);
             return true;
         }
@@ -159,35 +148,21 @@ namespace OtelnetMono.Interactive
         /// </summary>
         private bool HandleHelp()
         {
-            System.Console.WriteLine("\r\n");
-            System.Console.WriteLine("=== Console Commands ===");
-            System.Console.WriteLine("  [empty]       - Return to client mode");
-            System.Console.WriteLine("  quit, exit    - Disconnect and exit program");
-            System.Console.WriteLine("  help, ?       - Show this help message");
-            System.Console.WriteLine("  stats         - Show connection statistics");
-            System.Console.WriteLine();
-            System.Console.WriteLine("=== File Transfer Commands ===");
-            System.Console.WriteLine("Send Files:");
-            System.Console.WriteLine("  sz [options] <files...> - Send via ZMODEM (default)");
-            System.Console.WriteLine("  sy <files...>           - Send via YMODEM");
-            System.Console.WriteLine("  sx <file>               - Send via XMODEM (single file)");
-            System.Console.WriteLine("  kermit [args]           - Run kermit file transfer");
-            System.Console.WriteLine();
-            System.Console.WriteLine("Receive Files:");
-            System.Console.WriteLine("  rz [options]  - Receive via ZMODEM (default)");
-            System.Console.WriteLine("  ry            - Receive via YMODEM");
-            System.Console.WriteLine("  rx            - Receive via XMODEM (single file)");
-            System.Console.WriteLine();
-            System.Console.WriteLine("=== File Management ===");
-            System.Console.WriteLine("  ls [dir]      - List files in directory");
-            System.Console.WriteLine("  pwd           - Print working directory");
-            System.Console.WriteLine("  cd <dir>      - Change directory");
-            System.Console.WriteLine();
-            System.Console.WriteLine("=== Examples ===");
-            System.Console.WriteLine("  sz file.txt              - Send via ZMODEM");
-            System.Console.WriteLine("  rz                       - Receive via ZMODEM");
-            System.Console.WriteLine("  ls /tmp                  - List /tmp directory");
-            System.Console.WriteLine("========================");
+            System.Console.Write("\r\n");
+            System.Console.Write("=== Console Commands ===\r\n");
+            System.Console.Write("  [empty]       - Return to client mode\r\n");
+            System.Console.Write("  quit, exit    - Disconnect and exit program\r\n");
+            System.Console.Write("  help, ?       - Show this help message\r\n");
+            System.Console.Write("  stats         - Show connection statistics\r\n");
+            System.Console.Write("\r\n");
+            System.Console.Write("=== File Management ===\r\n");
+            System.Console.Write("  ls [dir]      - List files in directory\r\n");
+            System.Console.Write("  pwd           - Print working directory\r\n");
+            System.Console.Write("  cd <dir>      - Change directory\r\n");
+            System.Console.Write("\r\n");
+            System.Console.Write("=== Examples ===\r\n");
+            System.Console.Write("  ls /tmp                  - List /tmp directory\r\n");
+            System.Console.Write("========================\r\n");
 
             return true;
         }
@@ -204,7 +179,7 @@ namespace OtelnetMono.Interactive
             }
             else
             {
-                System.Console.WriteLine("\r\n[No active connection]");
+                System.Console.Write("\r\n[No active connection]\r\n");
             }
 
             return true;
@@ -223,7 +198,7 @@ namespace OtelnetMono.Interactive
                 // Use System.IO.Directory to list files
                 if (System.IO.Directory.Exists(path))
                 {
-                    System.Console.WriteLine($"\r\n[Directory listing: {System.IO.Path.GetFullPath(path)}]");
+                    System.Console.Write($"\r\n[Directory listing: {System.IO.Path.GetFullPath(path)}]\r\n");
 
                     string[] entries = System.IO.Directory.GetFileSystemEntries(path);
                     foreach (string entry in entries)
@@ -231,25 +206,25 @@ namespace OtelnetMono.Interactive
                         string name = System.IO.Path.GetFileName(entry);
                         if (System.IO.Directory.Exists(entry))
                         {
-                            System.Console.WriteLine($"  {name}/");
+                            System.Console.Write($"  {name}/\r\n");
                         }
                         else
                         {
                             long size = new System.IO.FileInfo(entry).Length;
-                            System.Console.WriteLine($"  {name} ({size} bytes)");
+                            System.Console.Write($"  {name} ({size} bytes)\r\n");
                         }
                     }
-                    System.Console.WriteLine($"\r\n[Total: {entries.Length} entries]");
+                    System.Console.Write($"\r\n[Total: {entries.Length} entries]\r\n");
                 }
                 else
                 {
-                    System.Console.WriteLine($"\r\n[Error: Directory not found: {path}]");
+                    System.Console.Write($"\r\n[Error: Directory not found: {path}]\r\n");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine($"\r\n[Error listing directory: {ex.Message}]");
+                System.Console.Write($"\r\n[Error listing directory: {ex.Message}]\r\n");
                 return false;
             }
 
@@ -265,11 +240,11 @@ namespace OtelnetMono.Interactive
             try
             {
                 string cwd = System.IO.Directory.GetCurrentDirectory();
-                System.Console.WriteLine($"\r\n{cwd}");
+                System.Console.Write($"\r\n{cwd}\r\n");
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine($"\r\n[Error getting current directory: {ex.Message}]");
+                System.Console.Write($"\r\n[Error getting current directory: {ex.Message}]\r\n");
                 return false;
             }
 
@@ -284,7 +259,7 @@ namespace OtelnetMono.Interactive
         {
             if (args.Length == 0)
             {
-                System.Console.WriteLine("\r\n[Error: cd requires a directory argument]");
+                System.Console.Write("\r\n[Error: cd requires a directory argument]\r\n");
                 return false;
             }
 
@@ -304,11 +279,11 @@ namespace OtelnetMono.Interactive
                 }
 
                 System.IO.Directory.SetCurrentDirectory(path);
-                System.Console.WriteLine($"\r\n[Changed to: {System.IO.Directory.GetCurrentDirectory()}]");
+                System.Console.Write($"\r\n[Changed to: {System.IO.Directory.GetCurrentDirectory()}]\r\n");
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine($"\r\n[Error changing directory: {ex.Message}]");
+                System.Console.Write($"\r\n[Error changing directory: {ex.Message}]\r\n");
                 return false;
             }
 
