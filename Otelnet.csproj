@@ -8,7 +8,7 @@
     <!-- Output Configuration -->
     <OutputType>Exe</OutputType>
     <RootNamespace>Otelnet</RootNamespace>
-    <AssemblyName>otelnet_mono</AssemblyName>
+    <AssemblyName>otelnet_mono.exe</AssemblyName>
     <OutputPath>./</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
