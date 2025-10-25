@@ -265,7 +265,18 @@ class Program
             }
 
             // Send to telnet server
-            byte[] data = new byte[] { b };
+            // Convert CR to CR+LF for telnet protocol (RFC 854)
+            // Based on otelnet.c:1719-1736
+            byte[] data;
+            if (c == '\r')
+            {
+                // CR -> CR+LF
+                data = new byte[] { 0x0D, 0x0A };
+            }
+            else
+            {
+                data = new byte[] { b };
+            }
 
             // Prepare output (IAC escaping)
             byte[] preparedData = telnet.PrepareOutput(data);
