@@ -1,10 +1,10 @@
 # Makefile for Otelnet .NET 8.0
 # Migrated from Mono to .NET 8.0 Core
-# Output: otelnet_mono.exe in project root
+# Output: otelnet_mono (native executable) in project root
 
 # Project configuration
 PROJECT = Otelnet.csproj
-OUTPUT = otelnet_mono.exe
+OUTPUT = otelnet_mono
 
 # .NET CLI
 DOTNET = dotnet
@@ -36,7 +36,7 @@ build-release:
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf obj
-	rm -f $(OUTPUT) $(OUTPUT).mdb *.pdb
+	rm -f $(OUTPUT) $(OUTPUT).dll $(OUTPUT).deps.json $(OUTPUT).runtimeconfig.json *.pdb *.mdb
 	@echo "Clean complete"
 
 # Run the application (Debug build)
@@ -47,15 +47,15 @@ run: build
 # Test build
 test: build
 	@echo "Testing build..."
-	dotnet $(OUTPUT) --version
-	dotnet $(OUTPUT) --help
+	./$(OUTPUT) --version
+	./$(OUTPUT) --help
 
 # Help
 help:
 	@echo "Otelnet .NET 8.0 Build System"
 	@echo ""
 	@echo "Migration Status: ✓ Mono REMOVED, using .NET 8.0 Core exclusively"
-	@echo "Output: otelnet_mono.exe in project root directory"
+	@echo "Output: otelnet_mono (native executable) in project root directory"
 	@echo ""
 	@echo "Prerequisites:"
 	@echo "  - .NET 8.0 SDK (installed: $$(dotnet --version 2>/dev/null || echo 'NOT FOUND'))"
@@ -69,10 +69,10 @@ help:
 	@echo "  help            - Show this help message"
 	@echo ""
 	@echo "Quick Start:"
-	@echo "  make build              # Build otelnet_mono.exe"
-	@echo "  dotnet otelnet_mono.exe --version"
-	@echo "  dotnet otelnet_mono.exe localhost 23"
+	@echo "  make build              # Build otelnet_mono"
+	@echo "  ./otelnet_mono --version"
+	@echo "  ./otelnet_mono localhost 23"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make build && dotnet otelnet_mono.exe --version"
+	@echo "  make build && ./otelnet_mono --version"
 	@echo "  make test"

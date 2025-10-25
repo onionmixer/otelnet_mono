@@ -5,9 +5,11 @@ obj/
 build/
 dist/
 
-# Mono/C# specific
-otelnet.exe
-otelnet.exe.mdb
+# .NET build outputs
+otelnet_mono
+otelnet_mono.dll
+otelnet_mono.deps.json
+otelnet_mono.runtimeconfig.json
 *.dll
 *.mdb
 *.pdb
@@ -16,6 +18,10 @@ otelnet.exe.mdb
 *.userprefs
 *.pidb
 *.sln.cache
+
+# Old Mono outputs
+otelnet.exe
+otelnet.exe.mdb
 
 # IDE files
 .vs/
