@@ -138,10 +138,33 @@ A complete Telnet client implementation in C# for Mono, based on the original C 
 
 - **Mono Runtime**: `mono` (tested with Mono 6.8.0+)
 - **C# Compiler**: `mcs` (Mono C# Compiler)
-- **Libraries**:
-  - `mscorlib.dll` (standard)
-  - `System.dll` (standard)
-  - `Mono.Posix.dll` (for terminal control)
+- **Libraries** (included with Mono):
+  - `System.dll` - Standard library
+  - `Mono.Posix.dll` - Terminal control (POSIX APIs)
+
+### Installing Mono
+
+**Ubuntu/Debian**:
+```bash
+sudo apt-get update
+sudo apt-get install mono-complete
+```
+
+**Fedora/RHEL**:
+```bash
+sudo dnf install mono-complete
+```
+
+**Arch Linux**:
+```bash
+sudo pacman -S mono
+```
+
+**Verify Installation**:
+```bash
+mono --version
+mcs --version
+```
 
 ## Installation
 
@@ -173,20 +196,22 @@ sudo ./uninstall.sh
 
 If you prefer to build without installing:
 
-#### Using Makefile (Recommended)
+#### Using mcs (Recommended)
 
 ```bash
-# Build the project
-make build
+# Create bin directory
+mkdir -p bin
 
-# Clean build artifacts
-make clean
+# Build with mcs
+mcs -debug -r:System.dll -r:Mono.Posix.dll -out:bin/otelnet.exe \
+    src/Program.cs \
+    src/Telnet/*.cs \
+    src/Terminal/*.cs \
+    src/Logging/*.cs \
+    src/Interactive/*.cs
 
-# Build and run
-make run
-
-# Show help
-make help
+# Run the executable
+mono bin/otelnet.exe --help
 ```
 
 #### Using xbuild (Alternative)
@@ -195,14 +220,10 @@ make help
 xbuild /p:Configuration=Debug OtelnetMono.csproj
 ```
 
-#### Manual build with mcs
+#### Clean build artifacts
 
 ```bash
-mcs -debug -r:System.dll -r:Mono.Posix.dll -out:bin/otelnet.exe \
-    src/Program.cs \
-    src/Telnet/TelnetProtocol.cs \
-    src/Telnet/TelnetState.cs \
-    src/Telnet/TelnetConnection.cs
+rm -rf bin/
 ```
 
 ### Creating Distribution Packages
@@ -275,12 +296,14 @@ otelnet>           # (empty line to return to telnet)
 ```
 otelnet_mono/
 ├── OtelnetMono.csproj       # MSBuild project file
-├── Makefile                 # Make build system
 ├── README.md                # This file
-├── TODO.txt                 # Detailed development plan
+├── RELEASE_NOTES.md         # Release notes
+├── install.sh               # Installation script
+├── uninstall.sh             # Uninstallation script
+├── make-package.sh          # Package creation script
 │
-├── bin/                     # Build output
-│   └── otelnet.exe          # Executable
+├── bin/                     # Build output (created during build)
+│   └── otelnet.exe          # Compiled executable
 │
 ├── src/                     # Source code
 │   ├── Program.cs           # Main entry point
@@ -288,28 +311,31 @@ otelnet_mono/
 │   ├── Telnet/              # Telnet protocol implementation
 │   │   ├── TelnetProtocol.cs    # RFC 854 constants
 │   │   ├── TelnetState.cs       # State machine
-│   │   ├── TelnetConnection.cs  # Connection management
-│   │   │
-│   │   └── Options/         # Option handlers (planned)
-│   │       ├── BinaryOption.cs
-│   │       ├── SgaOption.cs
-│   │       ├── EchoOption.cs
-│   │       ├── TerminalTypeOption.cs
-│   │       ├── NawsOption.cs
-│   │       ├── LinemodeOption.cs
-│   │       ├── TSpeedOption.cs
-│   │       └── EnvironOption.cs
+│   │   └── TelnetConnection.cs  # Connection + option negotiation
 │   │
-│   ├── Terminal/            # Terminal control (planned)
-│   ├── Console/             # Console mode (planned)
-│   ├── Transfer/            # File transfer (planned)
-│   ├── Logging/             # Session logging (planned)
-│   ├── Config/              # Configuration (planned)
-│   └── Utils/               # Utilities (planned)
+│   ├── Terminal/            # Terminal control
+│   │   └── TerminalControl.cs   # Raw mode, signals, NAWS
+│   │
+│   ├── Interactive/         # Console mode
+│   │   ├── ConsoleMode.cs       # Mode management
+│   │   └── CommandProcessor.cs  # Command handling
+│   │
+│   └── Logging/             # Session logging
+│       ├── HexDumper.cs         # Hex dump formatting
+│       └── SessionLogger.cs     # Session logging
 │
-├── test/                    # Tests (planned)
-├── scripts/                 # Build/test scripts
+├── scripts/                 # Test scripts
+│   ├── run_integration_tests.sh # Automated tests
+│   ├── test_server.py           # Test server
+│   └── test_server_subneg.py    # Subnegotiation test server
+│
 └── docs/                    # Documentation
+    ├── QUICK_START.md           # Quick start guide
+    ├── USER_MANUAL.md           # Complete manual
+    ├── TROUBLESHOOTING.md       # Problem solving
+    ├── USAGE_EXAMPLES.md        # 20+ examples
+    ├── VERSION_MANAGEMENT.md    # Version procedures
+    └── STAGE*_COMPLETION.md     # Development reports
 ```
 
 ## RFC Compliance
@@ -349,7 +375,29 @@ This implementation aims to fully comply with the following RFCs:
 - File operations (ls, pwd, cd)
 - Statistics (bytes sent/received, duration)
 
-## Development
+## Building and Development
+
+### Quick Build
+
+```bash
+# Clone the repository
+git clone https://github.com/onionmixer/otelnet_mono.git
+cd otelnet_mono
+
+# Build
+mkdir -p bin
+mcs -debug -r:System.dll -r:Mono.Posix.dll -out:bin/otelnet.exe \
+    src/Program.cs \
+    src/Telnet/*.cs \
+    src/Terminal/*.cs \
+    src/Logging/*.cs \
+    src/Interactive/*.cs
+
+# Run
+mono bin/otelnet.exe --version
+```
+
+### Development
 
 See [TODO.txt](TODO.txt) for the detailed development plan with 15 stages.
 
