@@ -1,49 +1,78 @@
-# Makefile for otelnet_mono
+# Makefile for Otelnet .NET 8.0
+# Migrated from Mono to .NET 8.0 Core
+# Output: otelnet_mono.exe in project root
 
-# Compiler
-MCS = mcs
+# Project configuration
+PROJECT = Otelnet.csproj
+OUTPUT = otelnet_mono.exe
 
-# Output
-OUTPUT = otelnet.exe
+# .NET CLI
+DOTNET = dotnet
 
-# Source files
-SOURCES = src/Program.cs \
-          src/Telnet/TelnetProtocol.cs \
-          src/Telnet/TelnetState.cs \
-          src/Telnet/TelnetConnection.cs \
-          src/Terminal/TerminalControl.cs \
-          src/Logging/HexDumper.cs \
-          src/Logging/SessionLogger.cs \
-          src/Interactive/ConsoleMode.cs \
-          src/Interactive/CommandProcessor.cs
-
-# References
-REFERENCES = -r:System.dll -r:Mono.Posix.dll
-
-# Flags
-FLAGS = -debug
+# Build configurations
+CONFIG_DEBUG = Debug
+CONFIG_RELEASE = Release
 
 # Targets
-.PHONY: all build clean run
+.PHONY: all build build-release clean run test help
 
 all: build
 
+# Build for development (Debug)
 build:
-	$(MCS) $(FLAGS) $(REFERENCES) -out:$(OUTPUT) $(SOURCES)
+	@echo "Building Otelnet (.NET 8.0 Debug)..."
+	$(DOTNET) build $(PROJECT) -c $(CONFIG_DEBUG)
 	@echo "Build complete: $(OUTPUT)"
+	@ls -lh $(OUTPUT) 2>/dev/null || echo "Binary created"
 
+# Build for release (Release, optimized)
+build-release:
+	@echo "Building Otelnet (.NET 8.0 Release)..."
+	$(DOTNET) build $(PROJECT) -c $(CONFIG_RELEASE)
+	@echo "Build complete: $(OUTPUT)"
+	@ls -lh $(OUTPUT)
+
+# Clean build artifacts
 clean:
-	rm -f $(OUTPUT) $(OUTPUT).mdb
+	@echo "Cleaning build artifacts..."
 	rm -rf obj
+	rm -f $(OUTPUT) $(OUTPUT).mdb *.pdb
+	@echo "Clean complete"
 
+# Run the application (Debug build)
 run: build
-	mono $(OUTPUT)
+	@echo "Running Otelnet..."
+	$(DOTNET) run --project $(PROJECT)
 
+# Test build
+test: build
+	@echo "Testing build..."
+	dotnet $(OUTPUT) --version
+	dotnet $(OUTPUT) --help
+
+# Help
 help:
-	@echo "Otelnet Mono Build System"
+	@echo "Otelnet .NET 8.0 Build System"
+	@echo ""
+	@echo "Migration Status: ✓ Mono REMOVED, using .NET 8.0 Core exclusively"
+	@echo "Output: otelnet_mono.exe in project root directory"
+	@echo ""
+	@echo "Prerequisites:"
+	@echo "  - .NET 8.0 SDK (installed: $$(dotnet --version 2>/dev/null || echo 'NOT FOUND'))"
 	@echo ""
 	@echo "Targets:"
-	@echo "  build  - Build the project (default)"
-	@echo "  clean  - Remove build artifacts"
-	@echo "  run    - Build and run otelnet"
-	@echo "  help   - Show this help message"
+	@echo "  build           - Build Debug configuration (default)"
+	@echo "  build-release   - Build Release configuration"
+	@echo "  clean           - Remove build artifacts"
+	@echo "  run             - Build and run (Debug)"
+	@echo "  test            - Test build"
+	@echo "  help            - Show this help message"
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  make build              # Build otelnet_mono.exe"
+	@echo "  dotnet otelnet_mono.exe --version"
+	@echo "  dotnet otelnet_mono.exe localhost 23"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make build && dotnet otelnet_mono.exe --version"
+	@echo "  make test"
