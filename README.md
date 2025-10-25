@@ -199,11 +199,8 @@ If you prefer to build without installing:
 #### Using mcs (Recommended)
 
 ```bash
-# Create bin directory
-mkdir -p bin
-
 # Build with mcs
-mcs -debug -r:System.dll -r:Mono.Posix.dll -out:bin/otelnet.exe \
+mcs -debug -r:System.dll -r:Mono.Posix.dll -out:otelnet.exe \
     src/Program.cs \
     src/Telnet/*.cs \
     src/Terminal/*.cs \
@@ -211,7 +208,7 @@ mcs -debug -r:System.dll -r:Mono.Posix.dll -out:bin/otelnet.exe \
     src/Interactive/*.cs
 
 # Run the executable
-mono bin/otelnet.exe --help
+mono otelnet.exe --help
 ```
 
 #### Using xbuild (Alternative)
@@ -223,7 +220,7 @@ xbuild /p:Configuration=Debug OtelnetMono.csproj
 #### Clean build artifacts
 
 ```bash
-rm -rf bin/
+rm -f otelnet.exe otelnet.exe.mdb
 ```
 
 ### Creating Distribution Packages
@@ -265,16 +262,16 @@ cat /usr/local/share/doc/otelnet/QUICK_START.md
 
 ```bash
 # Show help
-mono bin/otelnet.exe --help
+mono otelnet.exe --help
 
 # Show version
-mono bin/otelnet.exe --version
+mono otelnet.exe --version
 
 # Connect to telnet server
-mono bin/otelnet.exe <host> <port>
+mono otelnet.exe <host> <port>
 
 # Example: Connect to localhost on port 23
-mono bin/otelnet.exe localhost 23
+mono otelnet.exe localhost 23
 ```
 
 ### Console Mode
@@ -301,9 +298,7 @@ otelnet_mono/
 ├── install.sh               # Installation script
 ├── uninstall.sh             # Uninstallation script
 ├── make-package.sh          # Package creation script
-│
-├── bin/                     # Build output (created during build)
-│   └── otelnet.exe          # Compiled executable
+├── otelnet.exe              # Compiled executable (after build)
 │
 ├── src/                     # Source code
 │   ├── Program.cs           # Main entry point
@@ -385,8 +380,7 @@ git clone https://github.com/onionmixer/otelnet_mono.git
 cd otelnet_mono
 
 # Build
-mkdir -p bin
-mcs -debug -r:System.dll -r:Mono.Posix.dll -out:bin/otelnet.exe \
+mcs -debug -r:System.dll -r:Mono.Posix.dll -out:otelnet.exe \
     src/Program.cs \
     src/Telnet/*.cs \
     src/Terminal/*.cs \
@@ -394,7 +388,7 @@ mcs -debug -r:System.dll -r:Mono.Posix.dll -out:bin/otelnet.exe \
     src/Interactive/*.cs
 
 # Run
-mono bin/otelnet.exe --version
+mono otelnet.exe --version
 ```
 
 ### Development

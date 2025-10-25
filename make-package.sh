@@ -59,33 +59,25 @@ clean_build() {
 build_project() {
     print_msg "$BLUE" "Building project..."
 
-    if command -v make &> /dev/null && [ -f "Makefile" ]; then
-        make clean > /dev/null 2>&1 || true
-        if make build; then
-            print_msg "$GREEN" "✓ Build successful"
-        else
-            print_msg "$RED" "✗ Build failed"
-            exit 1
-        fi
+    # Clean previous builds
+    rm -f otelnet.exe otelnet.exe.mdb
+
+    # Build with mcs
+    if mcs -debug -r:System.dll -r:Mono.Posix.dll -out:otelnet.exe \
+        src/Program.cs \
+        src/Telnet/*.cs \
+        src/Terminal/*.cs \
+        src/Logging/*.cs \
+        src/Interactive/*.cs; then
+        print_msg "$GREEN" "✓ Build successful"
     else
-        print_msg "$YELLOW" "Using direct mcs build..."
-        mkdir -p bin
-        if mcs -debug -r:System.dll -r:Mono.Posix.dll -out:bin/otelnet.exe \
-            src/Program.cs \
-            src/Telnet/*.cs \
-            src/Terminal/*.cs \
-            src/Logging/*.cs \
-            src/Interactive/*.cs; then
-            print_msg "$GREEN" "✓ Build successful"
-        else
-            print_msg "$RED" "✗ Build failed"
-            exit 1
-        fi
+        print_msg "$RED" "✗ Build failed"
+        exit 1
     fi
 
     # Verify build
-    if [ ! -f "bin/otelnet.exe" ]; then
-        print_msg "$RED" "✗ Build output not found: bin/otelnet.exe"
+    if [ ! -f "otelnet.exe" ]; then
+        print_msg "$RED" "✗ Build output not found: otelnet.exe"
         exit 1
     fi
 
@@ -104,8 +96,7 @@ create_package_structure() {
     print_msg "$YELLOW" "Copying project files..."
 
     # Binary
-    mkdir -p "$pkg_dir/bin"
-    cp bin/otelnet.exe "$pkg_dir/bin/"
+    cp otelnet.exe "$pkg_dir/"
 
     # Source code
     mkdir -p "$pkg_dir/src"
@@ -127,7 +118,6 @@ create_package_structure() {
     fi
 
     # Build system
-    [ -f "Makefile" ] && cp Makefile "$pkg_dir/"
     [ -f "OtelnetMono.csproj" ] && cp OtelnetMono.csproj "$pkg_dir/"
 
     # Installation scripts
@@ -174,17 +164,16 @@ create_binary_package() {
     mkdir -p "$bin_dir"
 
     # Binary and wrapper
-    mkdir -p "$bin_dir/bin"
-    cp bin/otelnet.exe "$bin_dir/bin/"
+    cp otelnet.exe "$bin_dir/"
 
     # Create wrapper script
-    cat > "$bin_dir/bin/otelnet" << 'EOF'
+    cat > "$bin_dir/otelnet" << 'EOF'
 #!/bin/bash
 # Otelnet Mono wrapper script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 exec mono "$SCRIPT_DIR/otelnet.exe" "$@"
 EOF
-    chmod +x "$bin_dir/bin/otelnet"
+    chmod +x "$bin_dir/otelnet"
 
     # Documentation
     mkdir -p "$bin_dir/docs"

@@ -93,32 +93,19 @@ build_project() {
     fi
 
     # Clean previous builds
-    if command -v make &> /dev/null; then
-        make clean > /dev/null 2>&1 || true
+    rm -f otelnet.exe otelnet.exe.mdb
 
-        # Build
-        if make build; then
-            print_msg "$GREEN" "✓ Build successful"
-        else
-            print_msg "$RED" "✗ Build failed"
-            exit 1
-        fi
+    # Build directly with mcs
+    if mcs -debug -r:System.dll -r:Mono.Posix.dll -out:otelnet.exe \
+        src/Program.cs \
+        src/Telnet/*.cs \
+        src/Terminal/*.cs \
+        src/Logging/*.cs \
+        src/Interactive/*.cs; then
+        print_msg "$GREEN" "✓ Build successful"
     else
-        # Build directly with mcs
-        print_msg "$YELLOW" "Building with mcs directly..."
-        mkdir -p bin
-
-        if mcs -debug -r:System.dll -r:Mono.Posix.dll -out:bin/otelnet.exe \
-            src/Program.cs \
-            src/Telnet/*.cs \
-            src/Terminal/*.cs \
-            src/Logging/*.cs \
-            src/Interactive/*.cs; then
-            print_msg "$GREEN" "✓ Build successful"
-        else
-            print_msg "$RED" "✗ Build failed"
-            exit 1
-        fi
+        print_msg "$RED" "✗ Build failed"
+        exit 1
     fi
 
     echo ""
@@ -128,14 +115,14 @@ build_project() {
 verify_build() {
     print_msg "$BLUE" "Verifying build..."
 
-    if [ ! -f "bin/otelnet.exe" ]; then
-        print_msg "$RED" "Error: bin/otelnet.exe not found"
+    if [ ! -f "otelnet.exe" ]; then
+        print_msg "$RED" "Error: otelnet.exe not found"
         exit 1
     fi
 
     # Test version
-    if mono bin/otelnet.exe --version > /dev/null 2>&1; then
-        VERSION_OUTPUT=$(mono bin/otelnet.exe --version)
+    if mono otelnet.exe --version > /dev/null 2>&1; then
+        VERSION_OUTPUT=$(mono otelnet.exe --version)
         print_msg "$GREEN" "✓ $VERSION_OUTPUT"
     else
         print_msg "$RED" "✗ Executable test failed"
@@ -156,7 +143,7 @@ install_files() {
 
     # Install executable
     print_msg "$YELLOW" "Installing otelnet.exe to $LIB_DIR..."
-    sudo cp bin/otelnet.exe "$LIB_DIR/"
+    sudo cp otelnet.exe "$LIB_DIR/"
 
     # Create wrapper script
     print_msg "$YELLOW" "Creating wrapper script..."

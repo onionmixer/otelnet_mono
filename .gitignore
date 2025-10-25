@@ -1,13 +1,13 @@
 # Otelnet Mono - Git Ignore File
 
 # Build outputs
-bin/
 obj/
 build/
 dist/
 
 # Mono/C# specific
-*.exe
+otelnet.exe
+otelnet.exe.mdb
 *.dll
 *.mdb
 *.pdb
@@ -16,9 +16,6 @@ dist/
 *.userprefs
 *.pidb
 *.sln.cache
-
-# Exceptions - keep our main executable in source control for documentation
-!bin/.gitkeep
 
 # IDE files
 .vs/
